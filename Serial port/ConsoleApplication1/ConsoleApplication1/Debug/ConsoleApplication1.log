@@ -1,0 +1,5 @@
+﻿  Source.cpp
+d:\owncloud\codes\visual studio\serial port\consoleapplication1\consoleapplication1\source.cpp(97): warning C4018: '<': signed/unsigned mismatch
+d:\owncloud\codes\visual studio\serial port\consoleapplication1\consoleapplication1\source.cpp(112): warning C4101: 'TxBuffer': unreferenced local variable
+d:\owncloud\codes\visual studio\serial port\consoleapplication1\consoleapplication1\source.cpp(25): warning C4101: 'fSuccess': unreferenced local variable
+  ConsoleApplication1.vcxproj -> D:\OwnCloud\Codes\Visual Studio\Serial port\ConsoleApplication1\Debug\ConsoleApplication1.exe
