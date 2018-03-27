@@ -1,0 +1,11 @@
+﻿enginedemo.obj : error LNK2001: unresolved external symbol _mxDestroyArray
+enginedemo.obj : error LNK2001: unresolved external symbol _engOutputBuffer
+enginedemo.obj : error LNK2001: unresolved external symbol _engOpen
+enginedemo.obj : error LNK2001: unresolved external symbol _engClose
+enginedemo.obj : error LNK2001: unresolved external symbol _engGetVariable
+enginedemo.obj : error LNK2001: unresolved external symbol _mxCreateDoubleMatrix_730
+enginedemo.obj : error LNK2001: unresolved external symbol _engPutVariable
+enginedemo.obj : error LNK2001: unresolved external symbol _mxGetPi
+enginedemo.obj : error LNK2001: unresolved external symbol _mxGetPr
+enginedemo.obj : error LNK2001: unresolved external symbol _engEvalString
+D:\OwnCloud\Codes\Visual-Studio-tests\MatlabAPI\Release\MatlabAPI.exe : fatal error LNK1120: 10 unresolved externals

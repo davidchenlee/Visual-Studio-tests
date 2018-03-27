@@ -12,9 +12,6 @@ int main()
 	ThreadEx();
 	getchar();
 
-	//"double click" on the specified file
-	ShellExecute(NULL, "open", "D:\\OwnCloud\\Codes\\Visual-Studio-tests\\MatlabAPI\\x64\\Release\\MatlabAPI.exe", NULL, NULL, SW_SHOWDEFAULT);
-
 	return 0;
 }
 
