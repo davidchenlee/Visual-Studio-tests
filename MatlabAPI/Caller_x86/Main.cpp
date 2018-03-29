@@ -1,6 +1,6 @@
 #pragma once
 #include <iostream>
-#include <Windows.h>	//ShellExecute
+#include <windows.h>	//ShellExecute
 //using namespace std;
 
 int main()

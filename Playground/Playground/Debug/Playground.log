@@ -1,3 +1,0 @@
-﻿  Main.cpp
-d:\owncloud\codes\visual-studio-tests\playground\playground\main.cpp(16): error C2065: 'SW_SHOWDEFAULT': undeclared identifier
-d:\owncloud\codes\visual-studio-tests\playground\playground\main.cpp(16): error C3861: 'ShellExecute': identifier not found
