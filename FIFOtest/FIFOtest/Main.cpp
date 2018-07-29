@@ -41,38 +41,41 @@ int main()
 
 
 
-			for (int ii = 0; ii < 10; ii++)
+			for (int ii = 0; ii < 100; ii++)
 			{
 				std::cout << "Iteration: " << ii + 1 << std::endl;
 
 
 				//HOST**********************************************************
-				uint32_t NremainFIFO; //elements remaining
+				uint32_t NremainFIFO = 0; //elements remaining
 				size_t timeout = 100;
 				uint32_t* BufArray = new uint32_t[nPixAllFrames];
 				int NelemReadFIFO = 0;
-				int TimeoutCounter_iter = 10;
+				int TimeoutCounter_iter = 100;
 				uint32_t* dummy = new uint32_t[0];
+				const int ReadFifoWaitingTime_ms = 10;
+
+
+				//Start up the host FIFO. No needed for reading the data, but it takes about 3ms to read the number of elements remaining 'r' once the FIFO starts running
+				NiFpga_MergeStatus(&status, NiFpga_StartFifo(session, NiFpga_Main_TargetToHostFifoU32_FIFOOUT));
+				//Sleep(20);
 
 				//start the sequence with a pulse
 				NiFpga_MergeStatus(&status, NiFpga_WriteBool(session, NiFpga_Main_ControlBool_Start, 1));
 				NiFpga_MergeStatus(&status, NiFpga_WriteBool(session, NiFpga_Main_ControlBool_Start, 0));
 
-				//Start up the host FIFO. No needed for reading the data, but it takes about 3ms to read the number of elements remaining 'r' once the FIFO starts running
-				NiFpga_MergeStatus(&status, NiFpga_StartFifo(session, NiFpga_Main_TargetToHostFifoU32_FIFOOUT));
-				Sleep(500);
-
+				//Read the data as it comes
 				while (NelemReadFIFO < nPixAllFrames)
 				{
+					Sleep(ReadFifoWaitingTime_ms);
+
 					//By reading 0 elements, this function returns the number of elements queued in the host FIFO
 					NiFpga_MergeStatus(&status, NiFpga_ReadFifoU32(session, NiFpga_Main_TargetToHostFifoU32_FIFOOUT, dummy, 0, timeout, &NremainFIFO));
 					std::cout << "Number of elements remaining in the host FIFO: " << NremainFIFO << "\n";
 
-
 					if (NremainFIFO > 0)
 					{
 						NelemReadFIFO += NremainFIFO;
-
 						//Read the DMA FIFO data. This function alone is able to start up the FIFO, but it would not read 'r' right away
 						//because it takes about 3ms to read it once the FIFO starts running
 						NiFpga_MergeStatus(&status, NiFpga_ReadFifoU32(session, NiFpga_Main_TargetToHostFifoU32_FIFOOUT, BufArray, NremainFIFO, timeout, &NremainFIFO));
@@ -80,6 +83,7 @@ int main()
 					}
 
 					TimeoutCounter_iter--;
+
 					//Transfer timeout
 					if (TimeoutCounter_iter == 0)
 					{
