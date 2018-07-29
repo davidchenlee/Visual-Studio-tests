@@ -1,5 +1,5 @@
 /*
-This code tests the target-to-host (FPGA-to-PC) FIFO communication. A host-vi was created in LV as well as an alternative to this C++ code
+This code tests the target-to-host (FPGA-to-PC) FIFO communication. A host-vi was created in LV besides the present C++ code
 */
 
 
