@@ -36,43 +36,61 @@ int main()
 
 			//FPGA****************************************************************************************************
 			
-			size_t Npush = 10; //set the number of elements to push into the FIFO on the FPGA side. I have implemented a 'for loop' on the FPGA side
-			NiFpga_MergeStatus(&status, NiFpga_WriteI32(session, NiFpga_Main_ControlI32_Nmax, Npush));
+			int nPixAllFrames = 120000; //set the number of elements to push into the FIFO on the FPGA side. I have implemented a 'for loop' on the FPGA side
+			NiFpga_MergeStatus(&status, NiFpga_WriteI32(session, NiFpga_Main_ControlU32_Nmax, nPixAllFrames));
 
-			//start the sequence and set the control back to LOW
-			NiFpga_MergeStatus(&status, NiFpga_WriteBool(session, NiFpga_Main_ControlBool_Start, 1)); 
-			NiFpga_MergeStatus(&status, NiFpga_WriteBool(session, NiFpga_Main_ControlBool_Start, 0));
-			
-			//Read how many free spots are available in the FIFO
-			uint32_t Nfree;
-			NiFpga_MergeStatus(&status, NiFpga_ReadU32(session, NiFpga_Main_IndicatorU32_NumberofElementstoWrite, &Nfree));
-			std::cout << "Number of spots free in the FPGA FIFO: " << Nfree << "\n";
-			
+
+
+		for (int ii = 0; ii < 10; ii++)
+		{
+			std::cout << "Iteration: " << ii + 1 << std::endl;
+
 
 			//HOST**********************************************************
-			int Npop = 6;
-			uint32_t r; //elements remaining
+			uint32_t NremainFIFO; //elements remaining
 			size_t timeout = 100;
-			uint32_t* data = new uint32_t[Npop];
-			for (int ii = 0 ; ii < Npop; ii++)
-				data[ii] = 0;
+			uint32_t* BufArray = new uint32_t[nPixAllFrames];
+			int NelemReadFIFO = 0;
+			int TimeoutCounter_iter = 10;
 
-			//Start up the host FIFO. No needed for reading the data, but it takes about 3ms to read the number of elements remaining 'r' once the FIFO starts running
-			NiFpga_MergeStatus(&status, NiFpga_StartFifo(session, NiFpga_Main_TargetToHostFifoU32_FIFOOUT));
-			Sleep(10);
+			while (NelemReadFIFO < nPixAllFrames)
+			{
+				//start the sequence with a pulse
+				NiFpga_MergeStatus(&status, NiFpga_WriteBool(session, NiFpga_Main_ControlBool_Start, 1));
+				NiFpga_MergeStatus(&status, NiFpga_WriteBool(session, NiFpga_Main_ControlBool_Start, 0));
 
-		    //By reading 0 elements, this function returns the number of elements queued in the host FIFO
-			NiFpga_MergeStatus(&status, NiFpga_ReadFifoU32(session, NiFpga_Main_TargetToHostFifoU32_FIFOOUT, data, 0, -1, &r));
-			std::cout << "Number of elements remaining in the host FIFO: " << r << "\n";
+				//Start up the host FIFO. No needed for reading the data, but it takes about 3ms to read the number of elements remaining 'r' once the FIFO starts running
+				NiFpga_MergeStatus(&status, NiFpga_StartFifo(session, NiFpga_Main_TargetToHostFifoU32_FIFOOUT));
+				Sleep(20);
 
-			//Read the DMA FIFO data and print. This function alone is able to start up the FIFO, but it would not read 'r' right away
-			//because it takes about 3ms to read it once the FIFO starts running
-			NiFpga_MergeStatus(&status, NiFpga_ReadFifoU32(session, NiFpga_Main_TargetToHostFifoU32_FIFOOUT, data, Npop, timeout, &r));
-			for (int ii = 0; ii<Npop; ii++)
-				std::cout << "Data: " << data[ii]<< "\n";
-				
-			std::cout << "Number of elements remaining in the host FIFO: " << r << "\n";
-				
+				//By reading 0 elements, this function returns the number of elements queued in the host FIFO
+				NiFpga_MergeStatus(&status, NiFpga_ReadFifoU32(session, NiFpga_Main_TargetToHostFifoU32_FIFOOUT, BufArray, 0, timeout, &NremainFIFO));
+				std::cout << "Number of elements remaining in the host FIFO: " << NremainFIFO << "\n";
+
+
+				if (NremainFIFO > 0)
+				{
+					NelemReadFIFO += NremainFIFO;
+
+					//Read the DMA FIFO data. This function alone is able to start up the FIFO, but it would not read 'r' right away
+					//because it takes about 3ms to read it once the FIFO starts running
+					NiFpga_MergeStatus(&status, NiFpga_ReadFifoU32(session, NiFpga_Main_TargetToHostFifoU32_FIFOOUT, BufArray, NremainFIFO, timeout, &NremainFIFO));
+					std::cout << "Number of elements remaining in the host FIFO: " << NremainFIFO << "\n";
+				}
+
+				TimeoutCounter_iter--;
+				//Transfer timeout
+				if (TimeoutCounter_iter == 0)
+				{
+					getchar();
+					break;
+				}
+			}
+
+
+
+		}//For loop
+
 
 			//Close the session
 			NiFpga_MergeStatus(&status, NiFpga_Close(session, 0));
@@ -83,9 +101,15 @@ int main()
 		NiFpga_MergeStatus(&status, NiFpga_Finalize());
 		std::cout << "FPGA finalize status: " << status << "\n";
 
-
 		getchar();
 
 		return 0;
 	}
 }
+
+/*
+//Read how many free spots are available in the FIFO
+uint32_t Nfree;
+NiFpga_MergeStatus(&status, NiFpga_ReadU32(session, NiFpga_Main_IndicatorU32_NumberofElementstoWrite, &Nfree));
+std::cout << "Number of spots free in the FPGA FIFO: " << Nfree << "\n";
+*/
