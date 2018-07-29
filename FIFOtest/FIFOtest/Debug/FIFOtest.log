@@ -1,4 +1,2 @@
 ﻿  Main.cpp
-d:\owncloud\codes\visual-studio-tests\fifotest\fifotest\main.cpp(69): warning C4018: '<': signed/unsigned mismatch
-d:\owncloud\codes\visual-studio-tests\fifotest\fifotest\main.cpp(82): warning C4018: '<': signed/unsigned mismatch
   FIFOtest.vcxproj -> D:\OwnCloud\Codes\Visual-Studio-tests\FIFOtest\Debug\FIFOtest.exe
