@@ -5,6 +5,7 @@ This code tests the target-to-host (FPGA-to-PC) FIFO communication. A host-vi wa
 #include "NiFpga.c"
 #include <iostream>
 #include <fstream>					//For std::ofstream
+#include <vector>
 
 /*Define the full path of the bitfile*/
 static const char* Bitfile = "D:\\OwnCloud\\Codes\\Visual-Studio-tests\\FIFOtest\\LabView\\FPGA Bitfiles\\" NiFpga_Main_Bitfile;
@@ -52,10 +53,12 @@ int main()
 			//HOST**********************************************************
 			uint32_t nRemaining = 0; //elements remaining
 			size_t timeout = 100;
-			uint32_t* bufArray = new uint32_t[nPix]();
+			std::vector<uint32_t> dummyArray(1);
+
+			std::vector<uint32_t> bufArray(nPix);
 			int nElemRead = 0;
 			int timeoutCounter_iter = 10;
-			uint32_t* dummyArray = new uint32_t[0];
+
 			const int readWaitingTime_ms = 20;
 
 
@@ -77,13 +80,13 @@ int main()
 				Sleep(readWaitingTime_ms);
 
 				//By reading 0 elements, this function returns the number of elements queued in the host FIFO
-				NiFpga_MergeStatus(&status, NiFpga_ReadFifoU32(session, NiFpga_Main_TargetToHostFifoU32_FIFOOUT, dummyArray, 0, timeout, &nRemaining));
+				NiFpga_MergeStatus(&status, NiFpga_ReadFifoU32(session, NiFpga_Main_TargetToHostFifoU32_FIFOOUT, &dummyArray[0], 0, timeout, &nRemaining));
 				std::cout << "Number of elements remaining in the host FIFO: " << nRemaining << "\n";
 
 				if (nRemaining > 0)
 				{
 					nElemRead += nRemaining;
-					NiFpga_MergeStatus(&status, NiFpga_ReadFifoU32(session, NiFpga_Main_TargetToHostFifoU32_FIFOOUT, bufArray+ptr_index, nRemaining, timeout, &dummy));
+					NiFpga_MergeStatus(&status, NiFpga_ReadFifoU32(session, NiFpga_Main_TargetToHostFifoU32_FIFOOUT, &bufArray[0]+ptr_index, nRemaining, timeout, &dummy));
 
 					ptr_index += nRemaining;
 				}
@@ -105,8 +108,8 @@ int main()
 			for (int ii = 0; ii < nPix; ii++)
 				fileHandle << (int)bufArray[ii] << std::endl;		//Write each element
 
-			delete[] bufArray;
-			delete[] dummyArray;
+			//delete[] bufArray;
+			//delete[] dummyArray;
 
 		}//if
 
