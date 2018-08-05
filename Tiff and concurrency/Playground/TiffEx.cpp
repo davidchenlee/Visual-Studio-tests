@@ -2,7 +2,7 @@
 
 #include "TiffEx.h"
 
-myTiff::myTiff(std::string filename): mImage(300 * 800)
+myTiff::myTiff(std::string filename)
 {
 	TIFF *tiffHandle = TIFFOpen((foldername + filename + ".tif").c_str(), "r");
 
@@ -19,7 +19,7 @@ myTiff::myTiff(std::string filename): mImage(300 * 800)
 
 	int bytesPerLine = mWidth_pix;			//Length in memory of one row of pixel in the image.
 	unsigned char* buffer = (unsigned char *)_TIFFmalloc(bytesPerLine);
-	
+	mImage.resize(mWidth_pix * mHeight_pix);
 
 	if (buffer == NULL) // check the raster's memory was allocaed
 	{
