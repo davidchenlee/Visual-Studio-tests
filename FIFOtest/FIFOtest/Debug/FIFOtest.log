@@ -1,2 +1,3 @@
-﻿  Main.cpp
+﻿  NiFpga.c
+  Main.cpp
   FIFOtest.vcxproj -> D:\OwnCloud\Codes\Visual-Studio-tests\FIFOtest\Debug\FIFOtest.exe

@@ -2,10 +2,10 @@
 This code tests the target-to-host (FPGA-to-PC) FIFO communication. A host-vi was created in LV besides the present C++ code
 */
 #include "NiFpga_Main.h"
-#include "NiFpga.c"
 #include <iostream>
 #include <fstream>					//For std::ofstream
 #include <vector>
+#include <windows.h>				//For Sleep
 
 /*Define the full path of the bitfile*/
 static const char* Bitfile = "D:\\OwnCloud\\Codes\\Visual-Studio-tests\\FIFOtest\\LabView\\FPGA Bitfiles\\" NiFpga_Main_Bitfile;
@@ -107,9 +107,6 @@ int main()
 
 			for (int ii = 0; ii < nPix; ii++)
 				fileHandle << (int)bufArray[ii] << std::endl;		//Write each element
-
-			//delete[] bufArray;
-			//delete[] dummyArray;
 
 		}//if
 

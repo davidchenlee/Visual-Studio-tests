@@ -1,9 +1,6 @@
 #pragma once
-
 #include "TiffEx.h"
 #include "ConcurrencyEx.h"
-using namespace std;
-
 
 int main()
 {
@@ -13,7 +10,8 @@ int main()
 	try
 	{
 		myTiff image(inputFilename);
-		image.saveToTiff(outputFilename);
+		image.verticalFlip(1);
+		image.saveToTiff(2, outputFilename);
 	}
 	catch (...)
 	{

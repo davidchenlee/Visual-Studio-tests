@@ -14,8 +14,11 @@ class myTiff
 	int mWidth_pix;
 	int mHeight_pix;
 	int mStripSize_pix;
+	int mBytesPerLine;
 public:
 	myTiff(std::string filename);
 	~myTiff();
-	void saveToTiff(std::string filename);
+	void saveToTiff(const int nPages, std::string filename);
+	void verticalFlip(const int page);
+	void average();
 };

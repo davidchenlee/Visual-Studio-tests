@@ -2,6 +2,7 @@
 
 #include "TiffEx.h"
 
+//open a Tiff in the constructor
 myTiff::myTiff(std::string filename)
 {
 	TIFF *tiffHandle = TIFFOpen((foldername + filename + ".tif").c_str(), "r");
@@ -13,83 +14,126 @@ myTiff::myTiff(std::string filename)
 	TIFFGetField(tiffHandle, TIFFTAG_IMAGELENGTH, &mHeight_pix);
 	TIFFGetField(tiffHandle, TIFFTAG_ROWSPERSTRIP, &mStripSize_pix);
 
+	if (mHeight_pix % 2)
+		throw std::runtime_error("Odd number of rows not supported");
+
 	std::cout << "Width = " << mWidth_pix << "\n";
 	std::cout << "Height = " << mHeight_pix << "\n";
 	std::cout << "Strip size = " << mStripSize_pix << "\n";
 
-	int bytesPerLine = mWidth_pix;			//Length in memory of one row of pixel in the image.
-	unsigned char* buffer = (unsigned char *)_TIFFmalloc(bytesPerLine);
-	mImage.resize(mWidth_pix * mHeight_pix);
+	mBytesPerLine = TIFFScanlineSize(tiffHandle);				//Length in memory of one row of pixel in the image.
 
-	if (buffer == NULL) // check the raster's memory was allocaed
+	if (mBytesPerLine == NULL)
+		throw std::runtime_error("Assigning mBytesPerLine failed");
+
+	unsigned char* buffer = (unsigned char *)_TIFFmalloc(mBytesPerLine);
+
+	if (buffer == NULL) //Check the buffer memory was allocated
 	{
 		TIFFClose(tiffHandle);
 		std::runtime_error("Could not allocate memory for raster of TIFF image");
 	}
+
+	mImage.resize(mWidth_pix * mHeight_pix);	//Allocate memory for the image
 
 	//Now writing image to the file one strip at a time
 	for (int rowIndex = 0; rowIndex < mHeight_pix; rowIndex++)
 	{
 		if (TIFFReadScanline(tiffHandle, buffer, rowIndex, 0) < 0)
 			break;
-		memcpy(&mImage[(mHeight_pix - rowIndex - 1)*bytesPerLine], buffer, bytesPerLine);    // check the index here, and figure why not using h*bytesPerLine
-
+		std::memcpy(&mImage[(mHeight_pix - rowIndex - 1)*mBytesPerLine], buffer, mBytesPerLine);    // check the index here, and figure why not using h*bytesPerLine
 	}
 
-	//release the memory
-	_TIFFfree(buffer);
-
-	//close the tif file
-	TIFFClose(tiffHandle);
+	_TIFFfree(buffer);	//release the memory
+	TIFFClose(tiffHandle);	//close the tif file
 }
 
 myTiff::~myTiff()
 {
+
 }
 
 
-void myTiff::saveToTiff(std::string filename)
+void myTiff::saveToTiff(const int nPages, std::string filename)
 {
 	TIFF *tiffHandle = TIFFOpen((foldername + filename + ".tif").c_str(), "w");
+
+	mHeight_pix = mHeight_pix / nPages; //Divide the large image in nPages
 
 	if (tiffHandle == nullptr)
 		throw std::runtime_error((std::string)__FUNCTION__ + ": Saving Tiff failed");
 
-	//TAGS
-	TIFFSetField(tiffHandle, TIFFTAG_IMAGEWIDTH, mWidth_pix);										//Set the width of the image
-	TIFFSetField(tiffHandle, TIFFTAG_IMAGELENGTH, mHeight_pix);										//Set the height of the image
-	TIFFSetField(tiffHandle, TIFFTAG_SAMPLESPERPIXEL, 1);											//Set number of channels per pixel
-	TIFFSetField(tiffHandle, TIFFTAG_BITSPERSAMPLE, 8);												//Set the size of the channels
-	TIFFSetField(tiffHandle, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);								//Set the origin of the image. Many readers ignore this tag (ImageJ, Windows preview, etc...)
-	//TIFFSetField(tiffHandle, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);							//PLANARCONFIG_CONTIG (for example, RGBRGBRGB) or PLANARCONFIG_SEPARATE (R, G, and B separate)
-	TIFFSetField(tiffHandle, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);							//Single channel with min as black				
-	TIFFSetField(tiffHandle, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(tiffHandle, mWidth_pix));	//Set the strip size of the file to be size of one row of pixels
+	if (mBytesPerLine == NULL)
+		throw std::runtime_error("mBytesPerLine is NULL");
 
-	int bytesPerLine = mWidth_pix;			//Length in memory of one row of pixel in the image.
-	unsigned char *buffer = nullptr;		//Buffer used to store the row of pixel information for writing to file
+	unsigned char *buffer = (unsigned char *)_TIFFmalloc(mBytesPerLine);							//Buffer used to store the row of pixel information for writing to file
 
-	//Allocating memory to store pixels of current row
-	if (TIFFScanlineSize(tiffHandle))
-		buffer = (unsigned char *)_TIFFmalloc(bytesPerLine);
-	else
-		buffer = (unsigned char *)_TIFFmalloc(TIFFScanlineSize(tiffHandle));
-
-	//Now writing image to the file one strip at a time
-	for (int row = 0; row < mHeight_pix; row++)
+	for (int page = 0; page < nPages; page++)
 	{
-		memcpy(buffer, &mImage[(mHeight_pix - row - 1)*bytesPerLine], bytesPerLine);    // check the index here, and figure out why not using h*bytesPerLine
-		if (TIFFWriteScanline(tiffHandle, buffer, row, 0) < 0)
-			break;
+		//TAGS
+		TIFFSetField(tiffHandle, TIFFTAG_IMAGEWIDTH, mWidth_pix);										//Set the width of the image
+		TIFFSetField(tiffHandle, TIFFTAG_IMAGELENGTH, mHeight_pix);										//Set the height of the image
+		TIFFSetField(tiffHandle, TIFFTAG_SAMPLESPERPIXEL, 1);											//Set number of channels per pixel
+		TIFFSetField(tiffHandle, TIFFTAG_BITSPERSAMPLE, 8);												//Set the size of the channels
+		TIFFSetField(tiffHandle, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);								//Set the origin of the image. Many readers ignore this tag (ImageJ, Windows preview, etc...)
+		//TIFFSetField(tiffHandle, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);							//PLANARCONFIG_CONTIG (for example, RGBRGBRGB) or PLANARCONFIG_SEPARATE (R, G, and B separate)
+		TIFFSetField(tiffHandle, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);							//Single channel with min as black				
+		TIFFSetField(tiffHandle, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(tiffHandle, mWidth_pix));	//Set the strip size of the file to be size of one row of pixels
+		//TIFFSetField(tiffHandle, TIFFTAG_SUBFILETYPE, 3);												//Specify that it's a page within the multipage file
+		//TIFFSetField(tiffHandle, TIFFTAG_PAGENUMBER, page, nPages);										//Specify the page number
+
+
+		if (buffer == NULL) //Check the buffer memory was allocated
+		{
+			TIFFClose(tiffHandle);
+			std::runtime_error("Could not allocate memory for raster of TIFF image");
+		}
+
+		//Now writing image to the file one strip at a time
+		for (int rowIndex = 0; rowIndex < mHeight_pix; rowIndex++)
+		{
+			std::memcpy(buffer, &mImage[(page * mHeight_pix + mHeight_pix - rowIndex - 1)*mBytesPerLine], mBytesPerLine);    // check the index here, and figure out why not using h*bytesPerLine
+			if (TIFFWriteScanline(tiffHandle, buffer, rowIndex, 0) < 0)
+				break;
+		}
+		TIFFWriteDirectory(tiffHandle);
 	}
 
-	//Close the output file
-	(void)TIFFClose(tiffHandle);
-
-	//Destroy the buffer
-	if (buffer)
-		_TIFFfree(buffer);
+	_TIFFfree(buffer);//Destroy the buffer
+	TIFFClose(tiffHandle);//Close the output file
 
 	std::cout << "File successfully saved" << std::endl;
+}
+
+//Flip a particular page = 0, 1, 2, ...
+void myTiff::verticalFlip(const int page)
+{
+	if (mBytesPerLine == NULL)
+		throw std::runtime_error("mBytesPerLine is NULL");
+
+	unsigned char *buffer = (unsigned char *)_TIFFmalloc(mBytesPerLine);		//Buffer used to store the row of pixel information for writing to file
+
+	if (buffer == NULL) //Check the buffer memory was allocated
+		std::runtime_error("Could not allocate memory");
+
+	int height_pix = mHeight_pix / 2;
+
+	std::cout << "height " << height_pix << std::endl;
+
+	//Now writing image to the file one strip at a time
+	for (int rowIndex = 0; rowIndex < height_pix / 2; rowIndex++)
+	{
+		std::memcpy(buffer, &mImage[(page*height_pix + rowIndex)*mBytesPerLine], mBytesPerLine);
+		std::memcpy(&mImage[(page*height_pix + rowIndex)*mBytesPerLine], &mImage[(page*height_pix + height_pix - rowIndex - 1)*mBytesPerLine], mBytesPerLine);
+		std::memcpy(&mImage[(page*height_pix + height_pix - rowIndex - 1)*mBytesPerLine], buffer, mBytesPerLine);
+	}
+
+	_TIFFfree(buffer);//release the memory
+}
+
+void myTiff::average()
+{
+
 }
 
 
