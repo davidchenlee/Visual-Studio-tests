@@ -58,7 +58,7 @@ void myTiff::saveToTiff(const int nPages, std::string filename)
 {
 	TIFF *tiffHandle = TIFFOpen((foldername + filename + ".tif").c_str(), "w");
 
-	mHeight_pix = mHeight_pix / nPages; //Divide the large image in nPages
+	mHeight_pix = mHeight_pix / nPages; //Divide the large image into nPages
 
 	if (tiffHandle == nullptr)
 		throw std::runtime_error((std::string)__FUNCTION__ + ": Saving Tiff failed");
@@ -80,7 +80,7 @@ void myTiff::saveToTiff(const int nPages, std::string filename)
 		TIFFSetField(tiffHandle, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);							//Single channel with min as black				
 		TIFFSetField(tiffHandle, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(tiffHandle, mWidth_pix));	//Set the strip size of the file to be size of one row of pixels
 		//TIFFSetField(tiffHandle, TIFFTAG_SUBFILETYPE, 3);												//Specify that it's a page within the multipage file
-		//TIFFSetField(tiffHandle, TIFFTAG_PAGENUMBER, page, nPages);										//Specify the page number
+		//TIFFSetField(tiffHandle, TIFFTAG_PAGENUMBER, page, nPages);									//Specify the page number
 
 
 		if (buffer == NULL) //Check the buffer memory was allocated
@@ -96,7 +96,7 @@ void myTiff::saveToTiff(const int nPages, std::string filename)
 			if (TIFFWriteScanline(tiffHandle, buffer, rowIndex, 0) < 0)
 				break;
 		}
-		TIFFWriteDirectory(tiffHandle);
+		TIFFWriteDirectory(tiffHandle); //Create a page structure
 	}
 
 	_TIFFfree(buffer);//Destroy the buffer
@@ -116,18 +116,14 @@ void myTiff::verticalFlip(const int page)
 	if (buffer == NULL) //Check the buffer memory was allocated
 		std::runtime_error("Could not allocate memory");
 
-	int height_pix = mHeight_pix / 2;
-
-	std::cout << "height " << height_pix << std::endl;
-
 	//Now writing image to the file one strip at a time
-	for (int rowIndex = 0; rowIndex < height_pix / 2; rowIndex++)
+	int halfHeight_pix = mHeight_pix / 2;
+	for (int rowIndex = 0; rowIndex < halfHeight_pix / 2; rowIndex++)
 	{
-		std::memcpy(buffer, &mImage[(page*height_pix + rowIndex)*mBytesPerLine], mBytesPerLine);
-		std::memcpy(&mImage[(page*height_pix + rowIndex)*mBytesPerLine], &mImage[(page*height_pix + height_pix - rowIndex - 1)*mBytesPerLine], mBytesPerLine);
-		std::memcpy(&mImage[(page*height_pix + height_pix - rowIndex - 1)*mBytesPerLine], buffer, mBytesPerLine);
+		std::memcpy(buffer, &mImage[(page*halfHeight_pix + rowIndex)*mBytesPerLine], mBytesPerLine);
+		std::memcpy(&mImage[(page*halfHeight_pix + rowIndex)*mBytesPerLine], &mImage[(page*halfHeight_pix + halfHeight_pix - rowIndex - 1)*mBytesPerLine], mBytesPerLine);
+		std::memcpy(&mImage[(page*halfHeight_pix + halfHeight_pix - rowIndex - 1)*mBytesPerLine], buffer, mBytesPerLine);
 	}
-
 	_TIFFfree(buffer);//release the memory
 }
 

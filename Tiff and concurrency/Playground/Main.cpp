@@ -4,7 +4,7 @@
 
 int main()
 {
-	std::string inputFilename = "Beads_4um_750nm_50mW_x=35.120_y=19.808_z=18.4285";
+	std::string inputFilename = "Beads_4um_750nm_50mW_x=35.120_y=19.808_z=18.4510";
 	std::string outputFilename = "test";
 
 	try
